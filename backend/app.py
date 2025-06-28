@@ -8,7 +8,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate(r"C:\Users\Varshitha\Desktop\todo-app\frontend\todo-list-e8834-firebase-adminsdk-fbsvc-d994d73713.json")
+cred = credentials.Certificate("todo-list-e8834-firebase-adminsdk-fbsvc-d994d73713.json")
 firebase_admin.initialize_app(cred)
 
 # App setup
@@ -229,4 +229,5 @@ def ensure_files_exist():
 
 if __name__ == '__main__':
     ensure_files_exist()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
