@@ -6,7 +6,7 @@ import smtplib
 from email.message import EmailMessage
 import firebase_admin
 from firebase_admin import credentials, messaging
-
+from waitress import serve
 # Initialize Firebase Admin SDK
 cred = credentials.Certificate("todo-list-e8834-firebase-adminsdk-fbsvc-d994d73713.json")
 firebase_admin.initialize_app(cred)
@@ -227,7 +227,5 @@ def ensure_files_exist():
         if not os.path.exists(file):
             save_json(file, {})
 
-if __name__ == '__main__':
-    ensure_files_exist()
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
+if __name__ == "__main__":
+    serve(app, host="0.0.0.0", port=10000)
