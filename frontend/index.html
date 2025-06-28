@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="manifest" href="/manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  }
+</script>
+<!-- Add in <head> -->
+<script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.1/firebase-messaging.js"></script>
+
+<script>
+  // Your web app's Firebase configuration (replace with your actual config)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBnVyOV94TbBGw5NvSSdplMBm_jGBCQMrY",
+    authDomain: "todo-list-e8834.firebaseapp.com",
+    projectId: "todo-list-e8834",
+    storageBucket: "todo-list-e8834.appspot.com",
+    messagingSenderId: "900155232272",
+    appId: "1:900155232272:web:da8b6372d97e0073cdba95"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  // Ask user permission
+  messaging.requestPermission()
+    .then(() => messaging.getToken())
+    .then(token => {
+      console.log("FCM Token:", token);
+      // You can send this token to your backend for later notifications
+    })
+    .catch(err => {
+      console.error("Permission denied", err);
+    });
+</script>
+
+  <title>To-Do App with Categories, Due Dates & Reminders</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f6f2;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1000px;
+      margin: auto;
+      background: #fff8f0;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+    h2, h3 {
+      text-align: center;
+      color: #6a4e77;
+      margin: 10px 0;
+    }
+    .tabs {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 15px;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 10px;
+      background: #dcd0ff;
+      border: none;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background: #937dc2;
+      color: white;
+    }
+    .auth, .todo-box {
+      flex-shrink: 0;
+      margin-bottom: 20px;
+    }
+    input, select {
+      padding: 10px;
+      margin: 6px 0;
+      width: calc(100% - 20px);
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 6px 6px 12px 0;
+      background: #937dc2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #7d63af;
+    }
+    .task {
+      background: #e6e6fa;
+      margin: 6px 0;
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      flex-wrap: wrap;
+    }
+    .task:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+      background: #f5f5dc;
+    }
+    .category {
+      margin-top: 20px;
+    }
+    small {
+      display: block;
+      color: #555;
+    }
+    .section-bar {
+      height: 4px;
+      background: linear-gradient(to right, #c6b0d8, #f5c9c9);
+      margin: 16px 0;
+      border-radius: 2px;
+    }
+   .chart-section {
+  margin-top: 20px;
+  background: #f0e5ff;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+canvas#progressChart {
+  width: 200px !important;
+  height: 200px !important;
+  margin: auto;
+}
+
+    @media (max-width: 600px) {
+      .task {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .tabs {
+        flex-direction: column;
+      }
+      .tabs button {
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>To-Do App</h2>
+    <div class="section-bar"></div>
+
+    <div class="auth" id="authBox">
+      <input type="text" id="username" placeholder="Username"><br>
+      <input type="password" id="password" placeholder="Password"><br>
+      <button onclick="signup()">Sign Up</button>
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div class="todo-box" id="todoBox" style="display:none;">
+      <input id="todoInput" placeholder="Enter task">
+      <input id="dueDate" type="date">
+      <input id="reminder" type="time">
+      <select id="categorySelect">
+        <option value="general">General</option>
+        <option value="study">Study</option>
+        <option value="personal">Personal</option>
+        <option value="work">Work</option>
+      </select>
+      <button onclick="addTodo()">Add Task</button>
+      <button onclick="logout()">Logout</button>
+
+      <div class="tabs">
+        <button class="active" onclick="setFilter('all')">All</button>
+        <button onclick="setFilter('today')">Today</button>
+        <button onclick="setFilter('week')">This Week</button>
+        <button onclick="setFilter('completed')">Completed</button>
+      </div>
+
+      <div id="todoDisplay"></div>
+
+      <div class="chart-section">
+        <h3>Progress Overview</h3>
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5000';
+    let token = localStorage.getItem('token');
+    let currentFilter = 'all';
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tabs button[onclick*="${f}"]`).classList.add('active');
+      fetchTodos();
+    }
+
+    function setAuthUI(loggedIn) {
+      document.getElementById('authBox').style.display = loggedIn ? 'none' : 'block';
+      document.getElementById('todoBox').style.display = loggedIn ? 'block' : 'none';
+      if (loggedIn) fetchTodos();
+    }
+
+    function signup() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      fetch(`${API}/signup`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, password })
+      }).then(res => res.json()).then(alert);
+    }
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      fetch(`${API}/login`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, password })
+      }).then(res => res.json()).then(data => {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          token = data.token;
+          setAuthUI(true);
+        } else alert(data.error);
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      token = null;
+      setAuthUI(false);
+    }
+
+    function addTodo() {
+      const task = document.getElementById('todoInput').value.trim();
+      const category = document.getElementById('categorySelect').value;
+      const due_date = document.getElementById('dueDate').value;
+      const reminder = document.getElementById('reminder').value;
+      if (!task) return alert("Enter a task!");
+      fetch(`${API}/todos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({ task, category, due_date, reminder })
+      }).then(() => {
+        document.getElementById('todoInput').value = '';
+        fetchTodos();
+      });
+    }
+
+    function fetchTodos() {
+      fetch(`${API}/todos`, {
+        headers: { 'Authorization': token }
+      }).then(res => res.json()).then(data => {
+        const container = document.getElementById('todoDisplay');
+        container.innerHTML = '';
+
+        let total = 0, completed = 0;
+        const today = new Date();
+
+        for (let category in data) {
+          const catDiv = document.createElement('div');
+          catDiv.className = 'category';
+          catDiv.innerHTML = `<h3>${category}</h3>`;
+
+          data[category].active.forEach(todo => {
+            const dueDate = new Date(todo.due_date);
+            const isToday = dueDate.toDateString() === today.toDateString();
+            const isThisWeek = (dueDate - today) / (1000 * 60 * 60 * 24) <= 7;
+            const show = currentFilter === 'all' ||
+                         (currentFilter === 'today' && isToday) ||
+                         (currentFilter === 'week' && isThisWeek);
+
+            if (show) {
+              const div = document.createElement('div');
+              div.className = 'task';
+              div.innerHTML = `
+                <div>
+                  <strong>${todo.task}</strong>
+                  <small>Due: ${todo.due_date || 'N/A'}</small>
+                  <small>Reminder: ${todo.reminder || 'N/A'}</small>
+                </div>
+                <div>
+                  <button onclick="completeTodo(${todo.index})">✅</button>
+                  <button onclick="deleteTodo(${todo.index})">❌</button>
+                </div>
+              `;
+              catDiv.appendChild(div);
+              total++;
+            }
+          });
+
+          if (data[category].completed.length > 0 && currentFilter !== 'today' && currentFilter !== 'week') {
+            const completedTitle = document.createElement('h4');
+            completedTitle.textContent = 'Completed';
+            catDiv.appendChild(completedTitle);
+
+            data[category].completed.forEach(todo => {
+              const div = document.createElement('div');
+              div.className = 'task completed';
+              div.innerHTML = `${todo.task} <small>Due: ${todo.due_date || 'N/A'}</small>`;
+              catDiv.appendChild(div);
+              completed++;
+            });
+          }
+
+          if (catDiv.children.length > 1) container.appendChild(catDiv);
+        }
+
+        renderProgressChart(total + completed, completed);
+      });
+    }
+
+    function completeTodo(index) {
+      fetch(`${API}/todos/complete/${index}`, {
+        method: 'POST',
+        headers: { 'Authorization': token }
+      }).then(() => fetchTodos());
+    }
+
+    function deleteTodo(index) {
+      fetch(`${API}/todos/${index}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      }).then(() => fetchTodos());
+    }
+
+    function renderProgressChart(total, completed) {
+      const ctx = document.getElementById('progressChart').getContext('2d');
+      if (window.pieChart) window.pieChart.destroy();
+      window.pieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Completed', 'Remaining'],
+          datasets: [{
+            data: [completed, total - completed],
+            backgroundColor: ['#937dc2', '#f5c9c9']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            title: {
+              display: true,
+              text: 'Task Completion Status'
+            }
+          }
+        }
+      });
+    }
+
+    setAuthUI(!!token);
+  </script>
+</body>
+</html>

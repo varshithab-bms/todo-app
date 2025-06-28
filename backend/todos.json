@@ -1,0 +1,44 @@
+{
+  "Varshitha B": [
+    {
+      "task": "REad",
+      "date": "2025-06-28",
+      "completed": true
+    },
+    {
+      "task": "Read",
+      "date": "2025-06-28",
+      "completed": true
+    },
+    {
+      "task": "goo",
+      "date": "2025-06-28",
+      "completed": true,
+      "category": "Work"
+    },
+    {
+      "task": "Read",
+      "date": "2025-06-28",
+      "completed": false,
+      "category": "personal",
+      "due_date": "2025-06-29",
+      "reminder": "14:59"
+    },
+    {
+      "task": "playy",
+      "date": "2025-06-28",
+      "completed": false,
+      "category": "personal",
+      "due_date": "2025-06-28",
+      "reminder": "13:18"
+    },
+    {
+      "task": "PLAYY",
+      "date": "2025-06-28",
+      "completed": false,
+      "category": "study",
+      "due_date": "2025-06-28",
+      "reminder": "13:30"
+    }
+  ]
+}
