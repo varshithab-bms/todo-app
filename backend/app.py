@@ -6,7 +6,6 @@ import smtplib
 from email.message import EmailMessage
 import firebase_admin
 from firebase_admin import credentials, messaging
-from waitress import serve
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -237,6 +236,7 @@ def delete_todo(index):
         save_json(TODO_FILE, all_todos)
         return jsonify({'message': 'Todo deleted'})
     return jsonify({'error': 'Invalid index'}), 404
-port = int(os.environ.get("PORT", 10000))
+
 if __name__ == "__main__":
-    serve(app, host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
