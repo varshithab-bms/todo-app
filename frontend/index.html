@@ -28,14 +28,24 @@
 
   // Ask user permission
   messaging.requestPermission()
-    .then(() => messaging.getToken())
-    .then(token => {
-      console.log("FCM Token:", token);
-      // You can send this token to your backend for later notifications
-    })
-    .catch(err => {
-      console.error("Permission denied", err);
-    });
+  .then(() => messaging.getToken())
+  .then(fcmToken => {
+    console.log("FCM Token:", fcmToken);
+    if (token) {
+      fetch(`${API}/register_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({ fcm_token: fcmToken })
+      }).then(res => res.json()).then(console.log);
+    }
+  })
+  .catch(err => {
+    console.error("Permission denied", err);
+  });
+
 </script>
 
   <title>To-Do App with Categories, Due Dates & Reminders</title>

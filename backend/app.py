@@ -7,21 +7,36 @@ from email.message import EmailMessage
 import firebase_admin
 from firebase_admin import credentials, messaging
 from waitress import serve
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate("todo-list-e8834-firebase-adminsdk-fbsvc-d994d73713.json")
+from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Load environment variables
+load_dotenv()
+
+# Initialize Firebase
+FIREBASE_CRED_PATH = os.getenv("FIREBASE_CRED_PATH")
+cred = credentials.Certificate(FIREBASE_CRED_PATH)
 firebase_admin.initialize_app(cred)
 
 # App setup
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = 'supersecretkey'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
 # Config
-EMAIL_ADDRESS = 'youremail@gmail.com'
-EMAIL_PASSWORD = 'yourapppassword'
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 USER_FILE = 'users.json'
 TODO_FILE = 'todos.json'
 FCM_TOKEN_FILE = 'tokens.json'
+
+# Ensure files exist
+def ensure_files_exist():
+    for file in [USER_FILE, TODO_FILE, FCM_TOKEN_FILE]:
+        if not os.path.exists(file):
+            save_json(file, {})
+
+ensure_files_exist()
 
 # Utilities
 def load_json(file):
@@ -81,7 +96,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(send_reminder_emails, 'interval', minutes=1)
 scheduler.start()
 
-# Auth routes
+# Authentication routes
 @app.route('/signup', methods=['POST'])
 def signup():
     users = load_json(USER_FILE)
@@ -94,7 +109,8 @@ def signup():
     if username in users:
         return jsonify({'error': 'User already exists'}), 400
 
-    users[username] = password
+    hashed_password = generate_password_hash(password)
+    users[username] = hashed_password
     save_json(USER_FILE, users)
     return jsonify({'message': 'Signup successful'})
 
@@ -105,7 +121,8 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    if users.get(username) != password:
+    stored_hash = users.get(username)
+    if not stored_hash or not check_password_hash(stored_hash, password):
         return jsonify({'error': 'Invalid credentials'}), 401
 
     token = jwt.encode({
@@ -220,12 +237,6 @@ def delete_todo(index):
         save_json(TODO_FILE, all_todos)
         return jsonify({'message': 'Todo deleted'})
     return jsonify({'error': 'Invalid index'}), 404
-
-# Ensure file existence
-def ensure_files_exist():
-    for file in [USER_FILE, TODO_FILE, FCM_TOKEN_FILE]:
-        if not os.path.exists(file):
-            save_json(file, {})
 
 if __name__ == "__main__":
     serve(app, host="0.0.0.0", port=10000)
