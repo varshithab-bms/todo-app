@@ -237,6 +237,6 @@ def delete_todo(index):
         save_json(TODO_FILE, all_todos)
         return jsonify({'message': 'Todo deleted'})
     return jsonify({'error': 'Invalid index'}), 404
-
+port = int(os.environ.get("PORT", 10000))
 if __name__ == "__main__":
-    serve(app, host="0.0.0.0", port=10000)
+    serve(app, host="0.0.0.0", port=port)
